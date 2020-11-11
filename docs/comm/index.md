@@ -15,7 +15,7 @@ Aqui discutiremos algumas destas funcionalidades e como podem e são implementad
 
 ## Representação de dados
 
-Exceto por aplicações muito simples, processos em um sistema distribuídos trocam dados complexos, por exemplo estruturas ou classes com diversos campos, incluindo valores numéricos de diversos tipos, strings e vetores de bytes, com diversos níveis de aninhamento e somando vários KB.
+Exceto por aplicações muito simples, processos em um sistema distribuído trocam dados complexos, por exemplo estruturas ou classes com diversos campos, incluindo valores numéricos de diversos tipos, strings e vetores de bytes, com diversos níveis de aninhamento e somando vários KB.
 Neste cenário, vários fatores precisam ser levados em consideração na hora de colocar esta estrutura *no fio*, como:
 
 * variações de definições de tipos, por exemplo, `inteiro`: 8: 16, 32, ou 64 bits?

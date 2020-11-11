@@ -441,7 +441,7 @@ A título de curiosidade, IP-Multicast também está presente em IPv6, mas com a
 
 
 !!! question "Exercício: IP-Multicast"
-    Implemente e teste o seguinte sevidor, colocando várias instâncias para executar em múltiplos terminais, ao mesmo tempo.
+    Implemente e teste o seguinte **receiver**, colocando várias instâncias para executar em múltiplos terminais, ao mesmo tempo.
 
     ```Python
     import socket
@@ -452,7 +452,7 @@ A título de curiosidade, IP-Multicast também está presente em IPv6, mas com a
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((MCAST_GRP, MCAST_PORT))
+    sock.bind(('', MCAST_PORT))
     mreq = struct.pack("=4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     #4 bytes (4s) seguidos de um long (l), usando ordem nativa (=)
 
@@ -462,7 +462,7 @@ A título de curiosidade, IP-Multicast também está presente em IPv6, mas com a
         print(sock.recv(10240).decode())
     ```
 
-    Implemente e teste o seguinte cliente.
+    Implemente e teste o seguinte **sender**.
 
     ```Python
     import socket
@@ -481,7 +481,7 @@ A título de curiosidade, IP-Multicast também está presente em IPv6, mas com a
 * [UDP em Python](http://pymotw.com/2/socket/udp.html)
 * [UDP em Python](http://www.tutorialspoint.com/python/python_networking.htm)
 * [Multicast em Java](lycog.com/programming/multicast-programming-java/)
-* [Multicast em Python](https://stackoverflow.com/questions/603852/multicast-in-python)
+* [Multicast em Python](https://pymotw.com/2/socket/multicast.html)
 
 
 
@@ -490,7 +490,7 @@ A título de curiosidade, IP-Multicast também está presente em IPv6, mas com a
 É impossível pensar em sistemas distribuídos sem pensar em concorrência na forma de múltiplos processos executando (normalmente) em hosts distintos.
 De fato, os exemplos que apresentamos até agora consistem todos em um processo cliente requisitando ações de algum processo servidor.
 Apesar disso, a interação entre tais processos aconteceu sempre de forma sincronizada, *lock-step*, em que o cliente requisitava o serviço e ficava bloqueado esperando a resposta do servidor para então prosseguir em seu processamento, e o servidor fica bloqueado esperando requisições que atende e então volta a dormir.
-Este cenário, apresentado na figura a seguir, mostra que apesar do uso de processadores distintos e da concorrência na execução dos processos, temos um baixo grau de efetivo paralelismo.
+Este cenário, apresentado na figura a seguir, mostra que apesar do uso de processadores distintos e da concorrência na execução dos processos, temos um baixo grau de efetivo paralelismo; a requisição (2) só é processada depois que a resposta (1) é enviada.
 
 ```mermaid
 sequenceDiagram
@@ -541,10 +541,9 @@ Para relembrar, há várias diferenças entre *threads* e processos, mas a abstr
 -|----------|--------
 Definição | Instância de um programa | "Processo leve"
 Função de entrada | `main` | função "qualquer"
-Compartilhamento de memória| privada ao processo| Compartilhada entre threads
 Compartilhammento de código e dados | Privado ao processo | Compartilhado pelos threads
-EStado | Código, Stack, Heap, descritores (e.g, file descriptors), controle de acesso | Stack, variáveis locais 
-Comunicação| IPC - Inter process communication  | IPC
+Estado | Código, Stack, Heap, descritores (e.g, file descriptors), controle de acesso | Stack, variáveis locais 
+Comunicação| IPC (*Inter Process Communication*): sockets, FIFO, memória compartilhada, etc  | IPC, mutex, variáveis de condição, semáforos, etc
 Nível da implementação | Sistema operacional | Diferentes implementações 
 API || Posix, C++, Java, ...
 Bloqueio | Mudança de contexto para outro thread mesmo sem terminar quantum | Mudança de contexto para outro thread do mesmo processo
@@ -642,8 +641,9 @@ Vejamos por exemplo o problema do falso compartilhamento; considere o seguinte p
 ```c
 void threadfunction(int32 * exclusivo) {
     while (true) {
-        int32 local = trabalha();
-        exclusivo = local;
+        int32 local = *exclusivo;
+        local = processa(local);
+        *exclusivo = local;
     }
 }
 
@@ -659,7 +659,7 @@ thread2 = tread_new(threadfunction, &Y);
 
 Cada um dos threads criados acessa exclusivamente uma das variáveis. Logo, não há interferência entre as threads e se cada uma for colocada em um processador diferente, executarão no máximo de seu potencial, correto?
 Não exatamente, pois mesmo este código simplíssimo podemos sofrer de [falso compartilhamento](https://dzone.com/articles/false-sharing).
-Isto acontece, por exemplo, se cada linha da cache do sistema onde este programa executa tiver 8 ou mais bytes de comprimento. Como tanto `X`quanto `Y` no programa tem tem 4 bytes, as duas variáveis poderão ficar na mesma linha da cache e toda vez que uma thread modificar uma variável a cache da outra será invalidada.
+Isto acontece, por exemplo, se cada linha da cache do sistema onde este programa executa tiver 8 ou mais bytes de comprimento. Como tanto `X` quanto `Y` no programa tem 4 bytes, as duas variáveis poderão ficar na mesma linha da cache e toda vez que uma thread modificar uma variável a cache da outra será invalidada para leitura.
 
 ![Multithreaded](images/cache-line.png)
 
@@ -834,7 +834,7 @@ Mas isto não quer dizer que estamos "órfãos" de API; várias outras operaçõ
 * `pthread_exit` - termina a thread e retorna resultado 
    > An implicit call to `pthread_exit()` is made when a thread other than the thread in which `main()` was first invoked returns from the start routine that was used to create it. The function's return value serves as the thread's exit status. [Manual de `pthread_exit`](http://man7.org/linux/man-pages/man3/pthread_exit.3.html).
 	
-* `pthread_attr_setaffinity_np *` - ajusta afinidade dos threads.
+* `pthread_attr_setaffinity_np` - ajusta afinidade dos threads.
 
 #### Python
 
