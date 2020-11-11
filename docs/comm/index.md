@@ -176,7 +176,7 @@ De acordo com *benchmarks* do próprio [projeto](https://developers.google.com/p
 ### Thrift
 
 ??? bug "TODO"
-    Thrift como forma de representação de dados.
+    Thrift como forma de representação de dados: [Thrift type system](https://thrift-tutorial.readthedocs.io/en/latest/thrift-types.html)
 
 ## Invocação Remota de Procedimentos - RPC
 
@@ -864,8 +864,8 @@ O foco aqui é na descrição da tecnologia, mas não das arquiteturas resultant
 ## Publish/Subscribe
 
 O padrão *publish/subscribe* (ou *pub/sub*) se apresenta como uma alternativa à arquitetura cliente-servidor.
-Enquanto no model client-servidor, o cliente se comunica diretamente com um *endpoint* representado pelo servidor, no padrão *pub/sub* temos clientes que enviam mensagens, ou *publishers*, e clientes que recebem as mensagens, ou *subscribers*. Esses dois tipos de clientes nunca se comunicam diretamente e não precisam nem saber da existência do outro.
-Um agente especial, denominado *broker*, gerencia a conexão, armazena e filtrando as mensagens, além de distribui-las corretamente aos *subscribers*.
+Enquanto no modelo client-servidor, o cliente se comunica diretamente com um *endpoint* representado pelo servidor, no padrão *pub/sub* temos clientes que enviam mensagens, ou *publishers*, e clientes que recebem as mensagens, ou *subscribers*. Esses dois tipos de clientes nunca se comunicam diretamente e não precisam nem saber da existência do outro.
+Um agente especial, denominado *broker*, gerencia a conexão, armazena e filtrando as mensagens, além de distribuí-las corretamente aos *subscribers*.
 
 ### Desacoplamento
 
