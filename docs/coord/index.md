@@ -49,27 +49,27 @@ O estado do coordenador mostra se o recurso está livre ou ocupado e quais proce
 sequenceDiagram
     participant Coordenador
     note over Coordenador: Recurso=livre/Fila = []
-	Part1->>Coordenador: RequestAccess
+        Part1->>Coordenador: RequestAccess
     note over Coordenador: Recurso=livre/Fila = [Part1]
-	Coordenador->>Part1: ResponseOK
+        Coordenador->>+Part1: ResponseOK
     note over Coordenador: Recurso=ocupado/Fila = []
-	Part2->>Coordenador: RequestAccess
+        Part2->>Coordenador: RequestAccess
     note over Coordenador: Recurso=ocupado/Fila = [Part2]
-        Part1->>Coordenador: RequestFree
+        Part1->>-Coordenador: RequestFree
     note over Coordenador: Recurso=livre/Fila = [Part2]
         Coordenador->>Part1: ResponseFree
-	Part3->>Coordenador: RequestAccess
+        Part3->>Coordenador: RequestAccess
     note over Coordenador: Recurso=livre/Fila = [Part2,Part3]
-	Coordenador->>Part2: ResponseOK
+        Coordenador->>+Part2: ResponseOK
     note over Coordenador: Recurso=ocupado/Fila = [Part3]
-    	Part2->>Coordenador: RequestFree
+        Part2->>-Coordenador: RequestFree
     note over Coordenador: Recurso=livre/Fila = [Part3]
-    	Coordenador->>Part2: ResponseFree
+        Coordenador->>Part2: ResponseFree
     note over Coordenador: Recurso=ocupado/Fila = []
-	Coordenador->>Part3: ResponseOK
-    	Part3->>Coordenador: RequestFree
+        Coordenador->>+Part3: ResponseOK
+        Part3->>-Coordenador: RequestFree
     note over Coordenador: Recurso=livre/Fila = []
-    	Coordenador->>Part3: ResponseFree
+        Coordenador->>Part3: ResponseFree
 ```
 
 Este algoritmo satisfaz as características elencadas acima.   
@@ -128,10 +128,70 @@ Vejamos alguns casos específicos:
 Observe que nem falamos de falhas dos canais e já temos diversos cenários a serem resolvidos, para os quais se lhes pedir uma solução, tenho certeza absoluta de que me oferecerão alguma baseada em *timeouts*.
 Por exemplo, se o processo não devolver a permissão de acesso antes de que uma certa quantidade de tempo tenha passado, um *timeout*, então assuma que o mesmo parou de funcionar e não voltará mais, e gere uma nova permissão a ser passada a outros requisitantes.
 
+```mermaid
+sequenceDiagram
+    participant Coordenador
+    note over Coordenador: Recurso=livre/Fila = []
+        Part1->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=livre/Fila = [Part1]
+        Coordenador->>+Part1: ResponseOK
+    note over Coordenador: Recurso=ocupado/Fila = []
+        Part2->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=ocupado/Fila = [Part2]
+        Part1->>-Coordenador: RequestFree
+    note over Coordenador: Recurso=livre/Fila = [Part2]
+        Coordenador->>Part1: ResponseFree
+        Part3->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=livre/Fila = [Part2,Part3]
+        Coordenador->>Part2: ResponseOK
+    activate Part2
+    note over Coordenador: Recurso=ocupado/Fila = [Part3]
+
+    note over Part2: 💀☠️💀☠️💀☠️💀
+    deactivate Part2
+        Coordenador->>Coordenador: Timeout
+
+    note over Coordenador: Recurso=livre/Fila = [Part3]
+    note over Coordenador: Recurso=ocupado/Fila = []
+        Coordenador->>+Part3: ResponseOK
+        Part3->>-Coordenador: RequestFree
+    note over Coordenador: Recurso=livre/Fila = []
+        Coordenador->>Part3: ResponseFree
+```
+
 O problema desta e outras "soluções" baseadas em *timeouts* está no **assumir que o processo parou de funcionar**, pois caso isso não seja verdade, teremos agora dois *tokens*  no sistema, podendo levar à violação da propriedade de exclusão mútua. 
 
-??? bug "Violação da exclusão mútua"
-     Fazer diagrama de sequência mostrando violação da exclusão mútua.
+```mermaid
+sequenceDiagram
+    participant Coordenador
+    note over Coordenador: Recurso=livre/Fila = []
+        Part1->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=livre/Fila = [Part1]
+        Coordenador->>+Part1: ResponseOK
+    note over Coordenador: Recurso=ocupado/Fila = []
+        Part2->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=ocupado/Fila = [Part2]
+        Part1->>-Coordenador: RequestFree
+    note over Coordenador: Recurso=livre/Fila = [Part2]
+        Coordenador->>Part1: ResponseFree
+        Part3->>Coordenador: RequestAccess
+    note over Coordenador: Recurso=livre/Fila = [Part2,Part3]
+        Coordenador->>+Part2: ResponseOK
+    note over Coordenador: Recurso=ocupado/Fila = [Part3]
+
+        Coordenador->>Coordenador: Timeout
+
+    note over Coordenador: Recurso=livre/Fila = [Part3]
+    note over Coordenador: Recurso=ocupado/Fila = []
+    rect rgb(200, 0, 0)
+        Coordenador->>+Part3: ResponseOK
+
+        Part2->>-Coordenador: RequestFree
+        Part3->>-Coordenador: RequestFree
+    end
+    note over Coordenador: Recurso=livre/Fila = []
+        Coordenador->>Part3: ResponseFree
+```
 
 Por mais que se ajuste o valor do temporizador, em um sistema distribuído assíncrono, mesmo que aumentado com um relógio para medir a passagem do tempo local, o mesmo pode **sempre** estar errado. 
 
